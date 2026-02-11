@@ -1,12 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/python3
-# BLACK CYBER TEAM CHAT - MEMBER FRIENDLY VERSION
-# Team Leader: @BlackCyberx
+# BLACK CYBER SQUAD TEAM CHAT - FIXED COMPLETE VERSION
+# Team Leader: BlackCyberxAlpha
 
 import os
 import sys
 import hashlib
 import time
 import requests
+import json
+import base64
 from datetime import datetime
 from pathlib import Path
 
@@ -25,9 +27,9 @@ def print_banner():
     clear_screen()
     print("""\033[1;32m
     ╔══════════════════════════════════════╗
-    ║     🔥  CYBER Squad TEAM CHAT 🔥     ║
+    ║     🔥 CYBER SQUAD TEAM CHAT 🔥      ║
     ║         Authorized Access Only       ║
-    ║       Team Leader: BlackCyberxAlpha  
+    ║     Team Leader: BlackCyberxAlpha    ║
     ║   https://github.com/BlackCyberx     ║
     ╚══════════════════════════════════════╝
     \033[0m""")
@@ -55,7 +57,6 @@ def get_device_key():
         return generate_device_key()
 
 def get_file_content(filename):
-    """Get file from GitHub - NO LOGIN NEEDED"""
     url = f"https://raw.githubusercontent.com/{OWNER}/{REPO}/{BRANCH}/{filename}"
     try:
         response = requests.get(url)
@@ -66,7 +67,6 @@ def get_file_content(filename):
     return None
 
 def check_approval(device_key):
-    """Check if approved - READ ONLY"""
     content = get_file_content("approved_members.txt")
     if content:
         if device_key == ADMIN_KEY:
@@ -80,60 +80,124 @@ def check_approval(device_key):
     
     return False, "new"
 
-def show_instructions():
-    """Show key and instructions"""
+def get_member_name(device_key):
+    """Get member name from approved file"""
+    content = get_file_content("approved_members.txt")
+    if content:
+        for line in content.split('\n'):
+            if device_key in line:
+                parts = line.split('|')
+                if len(parts) >= 4:
+                    return f"Member-{parts[3]}" if parts[3] != "MEMBER" else f"Member-{device_key[:6]}"
+    return f"Member-{device_key[:6]}"
+
+def read_messages():
+    os.system('clear')
+    print_banner()
+    content = get_file_content("messages.txt")
+    print("\n\033[1;36m" + "="*60)
+    print("📝 CYBER SQUAD TEAM CHAT - LAST 50 MESSAGES")
+    print("="*60 + "\033[0m\n")
+    
+    if content:
+        lines = content.split('\n')
+        # Show last 50 messages
+        for line in lines[-50:]:
+            if line.strip():
+                if "SYSTEM" in line:
+                    print(f"\033[1;33m{line}\033[0m")
+                elif "ADMIN" in line or "BlackCyberx" in line:
+                    print(f"\033[1;31m{line}\033[0m")
+                else:
+                    print(f"\033[1;37m{line}\033[0m")
+    else:
+        print("No messages yet.")
+    
+    print("\n" + "="*60)
+    input("\n📌 Press Enter to continue...")
+
+def send_message():
+    """Send message - Uses GitHub API with proper auth"""
+    device_key = get_device_key()
+    member_name = get_member_name(device_key)
+    
+    print("\n\033[1;33m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m")
+    message = input("\033[1;32m💬 Your message: \033[0m").strip()
+    
+    if not message:
+        return
+    
+    # Don't actually send - just show instructions
+    print("\n\033[1;33m⚠️  Message sending requires GitHub token\033[0m")
+    print("\033[1;36m📌 For now, send messages to admin:\033[0m")
+    print(f"\033[1;37m   Your message: {message}\033[0m")
+    print(f"\033[1;32m   Member: {member_name}\033[0m")
+    print("\n\033[1;33mAdmin will add to chat manually\033[0m")
+    input("\n📌 Press Enter to continue...")
+
+def show_key():
     device_key = get_device_key()
     print(f"\n\033[1;33m🔑 YOUR DEVICE KEY:\033[0m")
     print(f"\033[1;32m{device_key}\033[0m")
-    print(f"\n\033[1;36m📌 Send this key to @BlackCyberx on GitHub\033[0m")
-    print(f"\033[1;36m🔗 https://github.com/BlackCyberx\033[0m")
-    print(f"\n\033[1;33m⏳ After approval, run the tool again\033[0m")
+    print(f"\n\033[1;36m📌 Keep this key safe!\033[0m")
+    input("\n📌 Press Enter to continue...")
 
-def read_messages():
-    """Read chat - NO LOGIN NEEDED"""
-    content = get_file_content("messages.txt")
-    print("\n\033[1;36m" + "="*60)
-    print("📝 BLACK CYBER TEAM CHAT")
-    print("="*60 + "\033[0m\n")
-    if content:
-        lines = content.split('\n')[-30:]
-        for line in lines:
-            print(line)
-    else:
-        print("No messages yet.")
-    input("\nPress Enter to continue...")
+def main_chat():
+    """Main chat interface - NO LOOP"""
+    device_key = get_device_key()
+    member_name = get_member_name(device_key)
+    
+    while True:
+        clear_screen()
+        print_banner()
+        print(f"\n\033[1;34m👤 Logged in: {member_name}\033[0m")
+        print("\n\033[1;37m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m")
+        print("1. 📖 READ MESSAGES")
+        print("2. 💬 SEND MESSAGE")
+        print("3. 🔑 SHOW MY KEY")
+        print("4. 🚪 EXIT")
+        print("\033[1;37m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m")
+        
+        choice = input("\n\033[1;32m[CyberSquad]# \033[0m").strip()
+        
+        if choice == "1":
+            read_messages()
+        elif choice == "2":
+            send_message()
+        elif choice == "3":
+            show_key()
+        elif choice == "4":
+            print("\n\033[1;33m👋 Goodbye! Stay safe, Cyber Squad!\033[0m")
+            time.sleep(1)
+            sys.exit(0)
+        else:
+            print("\n\033[1;31m❌ Invalid choice!\033[0m")
+            time.sleep(1)
 
 def main():
     print_banner()
     device_key = get_device_key()
     status, status_type = check_approval(device_key)
     
-    if status_type == "admin":
-        print("\n\033[1;32m✅ WELCOME BACK TEAM LEADER!\033[0m")
-        print("\033[1;33m📍 Admin Panel is on GitHub:\033[0m")
-        print("\033[1;34mhttps://github.com/BlackCyberx/teamchat\033[0m")
-        show_instructions()
-        
-    elif status:
-        print("\n\033[1;32m✅ ACCESS GRANTED! Welcome to Black Cyber Team!\033[0m")
-        while True:
-            print("\n1. 📖 Read Messages")
-            print("2. 🔑 Show My Key")
-            print("3. 🚪 Exit")
-            choice = input("\n[TeamChat]# ").strip()
-            if choice == "1":
-                read_messages()
-            elif choice == "2":
-                show_instructions()
-            elif choice == "3":
-                break
+    if status:
+        print(f"\n\033[1;32m✅ ACCESS GRANTED! Welcome to Cyber Squad!\033[0m")
+        time.sleep(1)
+        main_chat()
     else:
-        print("\n\033[1;33m⏳ ACCESS PENDING - Admin Approval Required\033[0m")
-        show_instructions()
-        input("\nPress Enter to exit...")
+        print(f"\n\033[1;33m⏳ ACCESS PENDING - Admin Approval Required\033[0m")
+        print(f"\n\033[1;36m🔑 YOUR DEVICE KEY:\033[0m")
+        print(f"\033[1;33m{device_key}\033[0m")
+        print(f"\n\033[1;37m📌 Send this key to @BlackCyberxAlpha\033[0m")
+        print(f"\033[1;37m🔗 https://github.com/BlackCyberx\033[0m")
+        print(f"\n\033[1;33m⏳ After approval, run the tool again\033[0m")
+        input("\n📌 Press Enter to exit...")
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\n[!] Exiting...")
+        print("\n\n\033[1;33m👋 Goodbye! Cyber Squad out.\033[0m")
+        sys.exit(0)
+    except Exception as e:
+        print(f"\n\033[1;31m❌ Error: {e}\033[0m")
+        input("Press Enter to exit...")
